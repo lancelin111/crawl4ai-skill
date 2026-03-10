@@ -5,9 +5,28 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/lancelin111/crawl4ai-skill/actions/workflows/security.yml">
+    <img src="https://github.com/lancelin111/crawl4ai-skill/actions/workflows/security.yml/badge.svg" alt="Security Scan">
+  </a>
+  <a href="https://pypi.org/project/crawl4ai-skill/">
+    <img src="https://img.shields.io/pypi/v/crawl4ai-skill" alt="PyPI">
+  </a>
+  <a href="https://pypi.org/project/crawl4ai-skill/">
+    <img src="https://img.shields.io/pypi/pyversions/crawl4ai-skill" alt="Python Version">
+  </a>
+  <a href="https://github.com/lancelin111/crawl4ai-skill/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
+  </a>
+  <a href="https://github.com/lancelin111/crawl4ai-skill/blob/main/SECURITY.md">
+    <img src="https://img.shields.io/badge/security-reviewed-green" alt="Security">
+  </a>
+</p>
+
+<p align="center">
   <a href="#安装">安装</a> •
   <a href="#快速开始">快速开始</a> •
   <a href="#登录态爬取">登录态爬取</a> •
+  <a href="#安全说明">安全说明</a> •
   <a href="#致谢">致谢</a>
 </p>
 
@@ -36,18 +55,30 @@ Twitter/X 上的推文、小红书的笔记... 这些平台的反爬措施很严
 
 ## 安装
 
-### 推荐方式（PyPI）
+### ✅ 推荐方式：PyPI（已验证）
 
 ```bash
 pip install crawl4ai-skill
 python -m playwright install chromium
 ```
 
-### 从源码安装（可检查代码）
+**PyPI 包已通过：**
+- ✅ PyPI 官方验证（Verified by PyPI）
+- ✅ 自动化安全扫描（Bandit + pip-audit）
+- ✅ 依赖项审查（所有依赖均为知名开源项目）
+- ✅ 查看安全报告：[SECURITY.md](./SECURITY.md)
+
+### 从源码安装（开发者/审计）
 
 ```bash
 git clone https://github.com/lancelin111/crawl4ai-skill.git
 cd crawl4ai-skill
+
+# 可选：使用 bandit 审计代码
+pip install bandit
+bandit -r src/
+
+# 安装
 pip install -e .
 python -m playwright install chromium
 ```

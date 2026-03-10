@@ -29,6 +29,7 @@ search_crawl_output/
 !SKILL.md
 !CONTRIBUTING.md
 !CHANGELOG.md
+!SECURITY.md
 
 # Login sessions and browser data (sensitive)
 sessions/
