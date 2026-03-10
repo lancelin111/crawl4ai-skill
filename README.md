@@ -84,13 +84,28 @@ crawl4ai-skill search-and-crawl "AI tutorials" --crawl-top 3
 
 ### 第一步：登录
 
-**Twitter/X（Cookie 方式，推荐）：**
+**获取 Twitter Cookie:**
 
 1. 在浏览器中登录 Twitter
 2. 打开开发者工具 (F12) → Application → Cookies
 3. 复制 `auth_token` 和 `ct0` 的值
 
+**登录方式（按安全性排序）：**
+
 ```bash
+# 方式 1: 环境变量（推荐，不记录在 shell history）
+export TWITTER_COOKIES="auth_token=xxx; ct0=yyy"
+crawl4ai-skill login twitter
+
+# 方式 2: 交互式输入（输入时不显示）
+crawl4ai-skill login twitter --interactive
+
+# 方式 3: 从文件读取（需 chmod 600）
+echo "auth_token=xxx; ct0=yyy" > ~/.twitter-cookies
+chmod 600 ~/.twitter-cookies
+crawl4ai-skill login twitter --cookies-file ~/.twitter-cookies
+
+# 方式 4: 命令行参数（不推荐，会记录在 shell history）
 crawl4ai-skill login twitter --cookies "auth_token=xxx; ct0=yyy"
 ```
 
@@ -166,21 +181,43 @@ python -m playwright install chromium --with-deps
 
 ## 安全说明
 
+### 代码透明度
+
+- ✅ 本项目**完全开源**，所有代码可在 [GitHub](https://github.com/lancelin111/crawl4ai-skill) 审查
+- ✅ **推荐**先克隆仓库审查代码，再安装
+- ✅ 可使用 `bandit` 工具扫描安全问题
+
 ### 凭据存储位置
 
 | 数据 | 存储路径 |
 |------|----------|
-| Session Cookies | `~/.crawl4ai-skill/sessions/<platform>.json` |
+| Session Cookies | `~/.crawl4ai-skill/sessions/<platform>.json` (权限 600) |
 | 浏览器数据 | `~/.crawl4ai-skill/browser_data/<platform>/` |
 
-**所有数据仅存储在本地，不会传输到任何外部服务器。**
+**所有数据仅存储在本地，绝不会传输到任何外部服务器。**
+
+### 凭据输入方式
+
+| 方式 | 安全性 | 说明 |
+|------|--------|------|
+| 环境变量 | ⭐⭐⭐ | 推荐，不记录在 shell history |
+| 交互式输入 | ⭐⭐⭐ | 输入时不显示 |
+| 文件读取 | ⭐⭐ | 需设置 chmod 600 |
+| 命令行参数 | ⭐ | 不推荐，会记录在 shell history |
 
 ### 安全建议
 
-1. **使用测试账号** - 建议使用非主力账号进行登录
-2. **清除 Shell 历史** - 传递 cookies 后执行 `history -c` 清除命令历史
-3. **及时清理** - 使用完毕后执行 `crawl4ai-skill session-clear --all`
-4. **检查代码** - 安装前可先 clone 仓库检查源码
+1. **审查代码** - 安装前建议先 clone 仓库检查源码
+2. **使用测试账号** - 建议使用非主力账号进行登录
+3. **使用环境变量** - 通过 `export TWITTER_COOKIES=...` 传递凭据
+4. **及时清理** - 使用完毕后执行 `crawl4ai-skill session-clear --all`
+5. **限制权限** - 确保 `~/.crawl4ai-skill` 目录权限安全
+
+### 责任声明
+
+- 本工具仅供学习和研究使用
+- 使用者需自行承担法律责任
+- 作者不对数据安全问题负责
 
 ### 安装方式选择
 

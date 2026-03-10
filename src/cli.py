@@ -513,13 +513,17 @@ def search_and_crawl(
 
 @cli.command()
 @click.argument("platform", type=click.Choice(get_supported_platforms()))
-@click.option("--cookies", "-c", help="Cookie 字符串（推荐方式）")
+@click.option("--cookies", "-c", help="Cookie 字符串（不推荐，会记录在 shell history）")
+@click.option("--cookies-file", type=click.Path(exists=True), help="从文件读取 Cookie（需 chmod 600）")
+@click.option("--interactive", "-i", is_flag=True, help="交互式输入 Cookie（输入时不显示）")
 @click.option("--username", "-u", help="用户名（Twitter）")
 @click.option("--password", "-p", help="密码（Twitter）")
 @click.option("--headless/--no-headless", default=False, help="是否无头模式（默认显示浏览器）")
 def login(
     platform: str,
     cookies: Optional[str],
+    cookies_file: Optional[str],
+    interactive: bool,
     username: Optional[str],
     password: Optional[str],
     headless: bool,
@@ -529,23 +533,74 @@ def login(
     支持的平台: twitter, xiaohongshu
 
     \b
-    登录方式（按优先级）：
-    1. Cookie 导入（推荐）- 最稳定，无验证码
-    2. 用户名密码（Twitter）- 可能需要验证码
-    3. 扫码登录（小红书）- 需要 App
+    Cookie 输入方式（按安全性排序）：
+    1. 环境变量（推荐）- 不记录在 shell history
+       export TWITTER_COOKIES="auth_token=xxx; ct0=yyy"
+       crawl4ai-skill login twitter
+
+    2. 交互式输入 - 输入时不显示
+       crawl4ai-skill login twitter --interactive
+
+    3. 文件读取 - 需设置 chmod 600
+       crawl4ai-skill login twitter --cookies-file ~/.twitter-cookies
+
+    4. 命令行参数（不推荐）- 会记录在 shell history
+       crawl4ai-skill login twitter --cookies "auth_token=xxx"
+
+    \b
+    其他登录方式：
+    - 用户名密码（Twitter）- 可能需要验证码
+    - 扫码登录（小红书）- 需要 App
 
     \b
     示例:
-      # Cookie 导入（推荐）
-      crawl4ai-skill login twitter --cookies "auth_token=xxx; ct0=yyy"
-      crawl4ai-skill login xiaohongshu --cookies "web_session=xxx"
+      # 环境变量（推荐）
+      export TWITTER_COOKIES="auth_token=xxx; ct0=yyy"
+      crawl4ai-skill login twitter
 
-      # 用户名密码
-      crawl4ai-skill login twitter -u "user@email.com" -p "password"
+      # 交互式输入
+      crawl4ai-skill login twitter --interactive
+
+      # 从文件读取
+      crawl4ai-skill login twitter --cookies-file ~/.twitter-cookies
 
       # 扫码登录
       crawl4ai-skill login xiaohongshu
     """
+    # 获取 Cookie 的优先级：环境变量 > 交互式 > 文件 > 命令行参数
+    final_cookies = None
+
+    # 1. 检查环境变量
+    env_var_name = f"{platform.upper()}_COOKIES"
+    env_cookies = os.environ.get(env_var_name)
+    if env_cookies:
+        final_cookies = env_cookies
+        click.echo(f"✓ 从环境变量 {env_var_name} 读取 Cookie")
+
+    # 2. 交互式输入
+    elif interactive:
+        click.echo(f"请输入 {platform} 的 Cookie（输入时不显示）:")
+        if platform in ["twitter", "x"]:
+            click.echo("  格式: auth_token=xxx; ct0=yyy")
+        final_cookies = click.prompt("Cookie", hide_input=True)
+
+    # 3. 从文件读取
+    elif cookies_file:
+        try:
+            with open(cookies_file, "r", encoding="utf-8") as f:
+                final_cookies = f.read().strip()
+            click.echo(f"✓ 从文件 {cookies_file} 读取 Cookie")
+        except Exception as e:
+            click.echo(f"✗ 读取文件失败: {e}", err=True)
+            raise SystemExit(1)
+
+    # 4. 命令行参数（不推荐）
+    elif cookies:
+        final_cookies = cookies
+        click.echo("⚠ 警告: 命令行传递 Cookie 会记录在 shell history，建议使用环境变量或 --interactive", err=True)
+
+    # 使用获取到的 cookies
+    cookies = final_cookies
     async def _login():
         from playwright.async_api import async_playwright
         from .browser.stealth import apply_stealth, get_random_user_agent
