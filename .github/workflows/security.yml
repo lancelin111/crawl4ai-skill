@@ -27,7 +27,7 @@ jobs:
     - name: Run Bandit
       run: |
         bandit -r src/ -f json -o bandit-report.json || true
-        bandit -r src/ -f screen
+        bandit -r src/ -ll -f screen
         
     - name: Upload Bandit report
       uses: actions/upload-artifact@v4
