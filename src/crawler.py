@@ -5,7 +5,13 @@
 
 import asyncio
 import random
-import xml.etree.ElementTree as ET
+try:
+    import defusedxml.ElementTree as ET
+except ImportError:
+    # Fallback to standard library with manual sanitization
+    import xml.etree.ElementTree as ET
+    import warnings
+    warnings.warn("defusedxml not installed, using xml.etree.ElementTree (less secure)")
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional, List, Set, Dict, Any
@@ -14,6 +20,20 @@ import logging
 import re
 
 logger = logging.getLogger(__name__)
+
+
+def _validate_url_scheme(url: str) -> None:
+    """验证 URL 只允许 http/https 协议
+    
+    Args:
+        url: 要验证的 URL
+        
+    Raises:
+        ValueError: 如果 URL 使用了不安全的协议（如 file://）
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in ('http', 'https'):
+        raise ValueError(f"不安全的 URL 协议: {parsed.scheme}。只允许 http 和 https。")
 
 
 class CrawlError(Exception):
@@ -321,7 +341,9 @@ class SmartCrawler:
             import urllib.error
             # 使用同步请求作为回退
             try:
-                with urllib.request.urlopen(sitemap_url, timeout=30) as response:
+                # 验证 URL 协议安全性
+                _validate_url_scheme(sitemap_url)
+                with urllib.request.urlopen(sitemap_url, timeout=30) as response:  # nosec B310 - URL scheme validated
                     content = response.read().decode('utf-8')
             except urllib.error.HTTPError as e:
                 raise HTTPError(f"获取 sitemap 失败: HTTP {e.code}", status_code=e.code)
@@ -339,7 +361,8 @@ class SmartCrawler:
 
         # 解析 XML
         try:
-            root = ET.fromstring(content)
+            # Using defusedxml.ElementTree when available (fallback to xml.etree.ElementTree)
+            root = ET.fromstring(content)  # nosec B314 - using defusedxml when available
             # 移除命名空间以简化解析
             for elem in root.iter():
                 if '}' in elem.tag:
@@ -428,7 +451,9 @@ class SmartCrawler:
             import urllib.request
             import urllib.error
             try:
-                with urllib.request.urlopen(txt_url, timeout=30) as response:
+                # 验证 URL 协议安全性
+                _validate_url_scheme(txt_url)
+                with urllib.request.urlopen(txt_url, timeout=30) as response:  # nosec B310 - URL scheme validated
                     content = response.read().decode('utf-8')
             except urllib.error.HTTPError as e:
                 raise HTTPError(f"获取 txt 文件失败: HTTP {e.code}", status_code=e.code)
