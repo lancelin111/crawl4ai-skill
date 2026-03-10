@@ -36,13 +36,16 @@ Twitter/X 上的推文、小红书的笔记... 这些平台的反爬措施很严
 
 ## 安装
 
-### 一键安装（推荐）
+### 推荐方式（可检查代码）
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/lancelin111/crawl4ai-skill/main/install.sh | bash
+git clone https://github.com/lancelin111/crawl4ai-skill.git
+cd crawl4ai-skill
+pip install -e .
+python -m playwright install chromium
 ```
 
-### 手动安装
+### 快速安装
 
 ```bash
 pip install git+https://github.com/lancelin111/crawl4ai-skill.git
@@ -159,6 +162,37 @@ crawl4ai-skill session-clear --all
 
 ```bash
 python -m playwright install chromium --with-deps
+```
+
+## 安全说明
+
+### 凭据存储位置
+
+| 数据 | 存储路径 |
+|------|----------|
+| Session Cookies | `~/.crawl4ai-skill/sessions/<platform>.json` |
+| 浏览器数据 | `~/.crawl4ai-skill/browser_data/<platform>/` |
+
+**所有数据仅存储在本地，不会传输到任何外部服务器。**
+
+### 安全建议
+
+1. **使用测试账号** - 建议使用非主力账号进行登录
+2. **清除 Shell 历史** - 传递 cookies 后执行 `history -c` 清除命令历史
+3. **及时清理** - 使用完毕后执行 `crawl4ai-skill session-clear --all`
+4. **检查代码** - 安装前可先 clone 仓库检查源码
+
+### 安装方式选择
+
+```bash
+# 推荐：先 clone 检查代码，再本地安装
+git clone https://github.com/lancelin111/crawl4ai-skill.git
+cd crawl4ai-skill
+pip install -e .
+python -m playwright install chromium
+
+# 或直接安装（信任仓库的情况下）
+pip install git+https://github.com/lancelin111/crawl4ai-skill.git
 ```
 
 ## 致谢

@@ -21,11 +21,21 @@ requires:
   - python: ">=3.9"
   - bins:
       - crawl4ai-skill
+      - playwright
 install:
+  - kind: pip
+    package: git+https://github.com/lancelin111/crawl4ai-skill.git
   - kind: shell
-    command: |
-      pip install git+https://github.com/lancelin111/crawl4ai-skill.git
-      python -m playwright install chromium
+    command: python -m playwright install chromium
+security:
+  credentials_storage: |
+    Session cookies are stored locally at ~/.crawl4ai-skill/sessions/<platform>.json
+    Browser data is stored at ~/.crawl4ai-skill/browser_data/<platform>/
+    All data is stored locally and never transmitted to external servers.
+  recommendations:
+    - Use disposable/test accounts for login
+    - Clear shell history after passing cookies: history -c
+    - Run session-clear when done to remove stored credentials
 ---
 
 # Crawl4AI Skill
@@ -152,10 +162,13 @@ crawl4ai-skill session-status
 ## Installation
 
 ```bash
-# 一键安装
-curl -fsSL https://raw.githubusercontent.com/lancelin111/crawl4ai-skill/main/install.sh | bash
+# 推荐：先 clone 检查代码
+git clone https://github.com/lancelin111/crawl4ai-skill.git
+cd crawl4ai-skill
+pip install -e .
+python -m playwright install chromium
 
-# 或手动安装
+# 或快速安装
 pip install git+https://github.com/lancelin111/crawl4ai-skill.git
 python -m playwright install chromium
 ```
