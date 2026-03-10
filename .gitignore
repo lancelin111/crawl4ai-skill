@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Output
+crawl_output/
+search_crawl_output/
+*.md
+!README.md
+!SKILL.md
+!CONTRIBUTING.md
+!CHANGELOG.md
+
+# Login sessions and browser data (sensitive)
+sessions/
+browser_data/
+*.json
+!package.json
