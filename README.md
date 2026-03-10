@@ -1,201 +1,206 @@
 # Crawl4AI Skill
 
-智能搜索与爬取工具，为 OpenClaw 提供 DuckDuckGo 搜索和智能网页爬取能力。
+<p align="center">
+  <strong>智能搜索与爬取工具 | 支持登录态爬取 Twitter/X、小红书</strong>
+</p>
 
-## Features
+<p align="center">
+  <a href="#安装">安装</a> •
+  <a href="#快速开始">快速开始</a> •
+  <a href="#登录态爬取">登录态爬取</a> •
+  <a href="#致谢">致谢</a>
+</p>
 
-- 🔍 **DuckDuckGo 搜索** - 免 API key，快速搜索网页
-- 🕷️ **智能全站爬取** - 自动识别 sitemap、llms-full.txt 和递归策略
-- 📝 **LLM 优化输出** - Fit Markdown 格式，去除冗余内容
-- 🔗 **引用和溯源** - 支持 markdown_with_citations 格式
-- ⚙️ **可配置选项** - 深度控制、链接过滤、超时设置
+---
 
-## Installation
+## 缘起
 
-### 从 ClawHub 安装（推荐）
+在使用 AI 助手处理信息时，我经常需要爬取网页内容。尝试了很多方案后，遇到了 [crawl4ai](https://github.com/unclecode/crawl4ai) —— 一个专为 LLM 设计的爬虫引擎，它的 **Fit Markdown** 输出简直是为 AI 量身定做的，去除了所有冗余内容，只保留核心信息。
+
+但在实际使用中，我遇到了一个痛点：**很多有价值的内容需要登录才能访问**。
+
+Twitter/X 上的推文、小红书的笔记... 这些平台的反爬措施很严格，普通的爬虫根本无法获取登录后的内容。crawl4ai 的 `storage_state` 参数理论上支持 Cookie 注入，但在 Twitter 等平台上会被反自动化检测拦截。
+
+经过反复尝试，我找到了一个可行的方案：**Playwright 持久化上下文 + crawl4ai Markdown 生成器**。用 Playwright 绕过反检测加载页面，再用 crawl4ai 的强大能力转换为干净的 Markdown。
+
+这个项目就是这些探索的成果。希望能帮助到有同样需求的朋友。
+
+## 特性
+
+- 🔍 **DuckDuckGo 搜索** - 免 API key，快速搜索
+- 🕷️ **智能爬取** - 自动识别 sitemap、递归爬取
+- 📝 **LLM 优化输出** - Fit Markdown，节省 token
+- 🔐 **登录态爬取** - 支持 Twitter/X、小红书
+- 🐦 **推文提取** - 支持引用推文 (Quote Tweet)
+- 🛡️ **反检测** - Playwright Stealth 模式
+
+## 安装
+
+### 一键安装（推荐）
 
 ```bash
-clawhub install crawl4ai-skill
+curl -fsSL https://raw.githubusercontent.com/lancelin111/crawl4ai-skill/main/install.sh | bash
 ```
 
-### 从源码安装
+### 手动安装
 
 ```bash
-# 克隆仓库
-git clone https://github.com/your-username/crawl4ai-skill.git
-cd crawl4ai-skill
-
-# 创建虚拟环境
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 安装依赖
-pip install -r requirements.txt
-
-# 安装 Playwright 浏览器
+pip install git+https://github.com/lancelin111/crawl4ai-skill.git
 python -m playwright install chromium
 ```
 
-## Quick Start
+## 快速开始
 
 ### 搜索
 
 ```bash
-# 基础搜索
 crawl4ai-skill search "python web scraping"
-
-# 指定结果数量
-crawl4ai-skill search "AI tutorials" --num-results 5
-
-# 输出到文件
-crawl4ai-skill search "machine learning" -o results.json
 ```
 
-### 爬取单页
+### 爬取网页
 
 ```bash
-# 基础爬取
-crawl4ai-skill crawl https://example.com
-
-# 指定格式并保存
-crawl4ai-skill crawl https://docs.python.org -f fit_markdown -o python_docs.md
-
-# 等待动态加载
-crawl4ai-skill crawl https://example.com --wait-for ".article-content"
+crawl4ai-skill crawl https://example.com -o page.md
 ```
 
-### 爬取全站
+### 爬取整站
 
 ```bash
-# 自动识别策略
-crawl4ai-skill crawl-site https://docs.example.com
-
-# 爬取 sitemap
-crawl4ai-skill crawl-site https://example.com/sitemap.xml --strategy sitemap
-
-# 深度爬取
-crawl4ai-skill crawl-site https://example.com --max-depth 3 --max-pages 100
+crawl4ai-skill crawl-site https://docs.example.com --max-pages 50
 ```
 
 ### 搜索并爬取
 
 ```bash
-# 搜索并爬取前 3 个结果
-crawl4ai-skill search-and-crawl "python web scraping tutorials"
-
-# 自定义搜索和爬取数量
-crawl4ai-skill search-and-crawl "AI tutorials" --num-results 10 --crawl-top 5
+crawl4ai-skill search-and-crawl "AI tutorials" --crawl-top 3
 ```
 
-## Usage
+## 登录态爬取
 
-### CLI 命令
+这是本项目的核心功能 —— 爬取需要登录的页面。
+
+### 第一步：登录
+
+**Twitter/X（Cookie 方式，推荐）：**
+
+1. 在浏览器中登录 Twitter
+2. 打开开发者工具 (F12) → Application → Cookies
+3. 复制 `auth_token` 和 `ct0` 的值
+
+```bash
+crawl4ai-skill login twitter --cookies "auth_token=xxx; ct0=yyy"
+```
+
+**小红书（扫码方式）：**
+
+```bash
+crawl4ai-skill login xiaohongshu
+# 会打开浏览器，用 App 扫码登录
+```
+
+### 第二步：爬取
+
+```bash
+# 爬取 Twitter 用户页面
+crawl4ai-skill crawl-with-login https://x.com/elonmusk -p twitter
+
+# 提取推文（包含引用推文）
+crawl4ai-skill crawl-with-login https://x.com/elonmusk -p twitter --extract-tweets
+
+# 爬取小红书笔记
+crawl4ai-skill crawl-with-login https://www.xiaohongshu.com/explore/xxx -p xiaohongshu
+```
+
+### 查看登录状态
+
+```bash
+crawl4ai-skill session-status
+```
+
+### 清除登录信息
+
+```bash
+crawl4ai-skill session-clear twitter
+crawl4ai-skill session-clear --all
+```
+
+## 命令参考
 
 | 命令 | 说明 |
 |------|------|
 | `search <query>` | 搜索网页 |
-| `crawl <url>` | 爬取单个网页 |
-| `crawl-site <url>` | 爬取整个站点 |
+| `crawl <url>` | 爬取单页 |
+| `crawl-site <url>` | 爬取全站 |
 | `search-and-crawl <query>` | 搜索并爬取 |
+| `login <platform>` | 登录平台 |
+| `crawl-with-login <url>` | 登录态爬取 |
+| `session-status` | 查看登录状态 |
+| `session-clear [platform]` | 清除登录信息 |
 
-### 常用选项
+## 输出格式
 
-| 选项 | 说明 |
+| 格式 | 说明 |
 |------|------|
-| `-n, --num-results` | 搜索结果数量 |
-| `-f, --format` | 输出格式（fit_markdown/markdown_with_citations/raw_markdown） |
-| `-o, --output` | 输出文件路径 |
-| `-d, --max-depth` | 最大爬取深度 |
-| `-p, --max-pages` | 最大页面数量 |
+| `fit_markdown` | 优化后的 Markdown，去除冗余（推荐） |
+| `markdown_with_citations` | 带引用列表，便于溯源 |
+| `raw_markdown` | 原始 Markdown |
 
-### Python API
+## 常见问题
 
-```python
-import asyncio
-from src.search import DuckDuckGoSearcher
-from src.crawler import SmartCrawler
+### Twitter 爬取显示未登录？
 
-# 搜索
-searcher = DuckDuckGoSearcher()
-results = searcher.search("python web scraping", num_results=5)
-for r in results:
-    print(f"{r.title}: {r.url}")
+确保使用的是 `x.com` 而不是 `twitter.com`，Cookie 域名绑定在 `.x.com`。
 
-# 爬取
-crawler = SmartCrawler()
-result = asyncio.run(crawler.crawl_page("https://example.com"))
-print(result.markdown)
-```
+### 小红书扫码后无响应？
 
-## Output Formats
+扫码后需要在 App 中点击确认登录。
 
-### fit_markdown（默认）
-
-优化后的 Markdown，去除导航、广告等冗余内容，节省 token。
-
-### markdown_with_citations
-
-带引用列表的 Markdown，链接转换为编号引用，便于溯源。
-
-### raw_markdown
-
-原始 Markdown 输出，保留完整内容。
-
-## 爬取策略
-
-### auto（自动识别）
-
-- URL 以 `sitemap.xml` 结尾 → sitemap 策略
-- URL 以 `llms-full.txt` / `llms.txt` 结尾 → txt 列表策略
-- 其他 → recursive 递归策略
-
-### sitemap
-
-解析 sitemap.xml，按顺序爬取所有 URL。
-
-### recursive
-
-从起始 URL 开始，递归爬取内部链接（BFS）。
-
-## Examples
-
-查看 `examples/` 目录获取更多示例：
-
-- `simple_crawl.sh` - 简单爬取示例
-- `deep_crawl.sh` - 深度爬取示例
-- `search_and_crawl.sh` - 搜索+爬取示例
-
-## Troubleshooting
-
-### 爬取失败
-
-1. 检查网络连接
-2. 尝试增加超时时间：`--timeout 60`
-3. 对于动态页面，使用 `--wait-for` 等待元素加载
-
-### 搜索被限流
-
-DuckDuckGo 可能会限流频繁请求，建议：
-- 减少请求频率
-- 使用更精确的查询词
-
-### Playwright 浏览器问题
+### Playwright 浏览器问题？
 
 ```bash
-# 重新安装浏览器
 python -m playwright install chromium --with-deps
 ```
 
-## Contributing
+## 致谢
 
-欢迎贡献代码！请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详情。
+这个项目的诞生，离不开以下优秀的开源项目：
+
+### [crawl4ai](https://github.com/unclecode/crawl4ai) ⭐
+
+**一个真正为 LLM 设计的爬虫引擎。**
+
+当我第一次看到 crawl4ai 的 Fit Markdown 输出时，我被震撼了。它不是简单地把 HTML 转成 Markdown，而是智能地提取核心内容，去除导航、广告、侧边栏等噪音。这正是 AI 需要的输入格式 —— 干净、精炼、直击要点。
+
+crawl4ai 的 `PruningContentFilter` 和 `DefaultMarkdownGenerator` 是本项目 Markdown 生成的核心。感谢 [@unclecode](https://github.com/unclecode) 创造了这个强大的工具。
+
+### [Playwright](https://playwright.dev/)
+
+微软出品的浏览器自动化工具。本项目使用 Playwright 的持久化上下文来维护登录状态，绕过反自动化检测。它的稳定性和跨平台支持是项目可靠运行的基础。
+
+### [playwright-stealth](https://github.com/nickoala/playwright-stealth)
+
+帮助 Playwright 绕过反自动化检测的关键组件。没有它，登录态爬取根本不可能实现。
+
+### [duckduckgo-search](https://github.com/deedy5/duckduckgo_search)
+
+免 API key 的搜索能力来自这个项目。简单、可靠、无需注册。
+
+---
+
+**如果这个项目对你有帮助，请给上面这些项目一个 Star ⭐**
+
+它们才是真正的英雄。
 
 ## License
 
-MIT License - 详见 [LICENSE](LICENSE)
+MIT License
 
-## Acknowledgments
+## 作者
 
-- [crawl4ai](https://github.com/unclecode/crawl4ai) - 强大的 LLM 友好爬虫引擎
-- [duckduckgo-search](https://github.com/deedy5/duckduckgo_search) - DuckDuckGo 搜索库
-- [OpenClaw](https://openclaw.ai) - AI 助手平台
+[@lancelin](https://github.com/lancelin111)
+
+---
+
+<p align="center">
+  <em>Built with ❤️ and open source</em>
+</p>
