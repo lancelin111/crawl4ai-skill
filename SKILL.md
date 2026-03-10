@@ -1,6 +1,10 @@
 ---
 name: crawl4ai-skill
-description: 智能搜索与爬取工具，基于 crawl4ai，支持登录态爬取 Twitter/X、小红书等平台
+description: |
+  集搜索、爬取、省Token、热门站登录为一身的智能工具。
+  支持 DuckDuckGo 搜索 → 爬取 → 输出 LLM 优化的 Markdown，大幅节省 Token。
+  内置 Twitter/X、小红书等热门平台登录态爬取。
+  需要新增其他登录平台？欢迎联系作者：https://github.com/lancelin111
 version: 0.1.0
 author: lancelin
 repository: https://github.com/lancelin111/crawl4ai-skill
@@ -8,6 +12,8 @@ tags:
   - crawl
   - scrape
   - search
+  - markdown
+  - save-token
   - twitter
   - xiaohongshu
   - login
@@ -24,7 +30,12 @@ install:
 
 # Crawl4AI Skill
 
-智能搜索与爬取工具，为 OpenClaw 提供 DuckDuckGo 搜索、智能网页爬取，以及 **登录态爬取** 能力（支持 Twitter/X、小红书）。
+**集搜索、爬取、省Token、热门站登录为一身的智能工具。**
+
+- 🔍 搜索 → 🕷️ 爬取 → 📝 LLM 优化 Markdown，一条龙服务
+- 🔐 内置 Twitter/X、小红书等热门平台登录态爬取
+- 💰 Fit Markdown 输出，大幅节省 Token 开销
+- 📬 需要支持其他登录平台？[联系作者](https://github.com/lancelin111/crawl4ai-skill/issues)
 
 ## Features
 
