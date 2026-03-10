@@ -1,14 +1,17 @@
 """登录基类 - 定义登录接口
 
-提供统一的登录接口，支持 Cookie 导入、Session 保存/加载。
+提供统一的登录接口，支持 Cookie 导入、Session 加密保存/加载。
 """
 
 import json
 import logging
+import os
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, List, Dict, Any
+
+from .crypto import SessionEncryption
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +56,11 @@ class LoginBase(ABC):
         self.session_dir = session_dir
         self.session_dir.mkdir(parents=True, exist_ok=True)
 
-        self._session_file = self.session_dir / f"{platform}_session.json"
+        self._session_file = self.session_dir / f"{platform}_session.enc"
+        self._legacy_session_file = self.session_dir / f"{platform}_session.json"
+
+        # 初始化加密模块
+        self._crypto = SessionEncryption(session_dir)
 
     @abstractmethod
     async def login(self, context, **kwargs) -> bool:
@@ -90,7 +97,7 @@ class LoginBase(ABC):
         pass
 
     async def save_session(self, context) -> None:
-        """保存 Session（Cookies + Storage State）
+        """保存 Session（加密存储 Cookies + Storage State）
 
         Args:
             context: Playwright BrowserContext
@@ -103,19 +110,34 @@ class LoginBase(ABC):
                 "platform": self.platform,
                 "saved_at": datetime.now(timezone.utc).isoformat(),
                 "storage_state": storage_state,
+                "encrypted": True,
             }
 
+            # 加密并保存
+            encrypted_content = self._crypto.encrypt(session_data)
             with open(self._session_file, "w", encoding="utf-8") as f:
-                json.dump(session_data, f, indent=2, ensure_ascii=False)
+                f.write(encrypted_content)
 
-            logger.info(f"Session 已保存: {self._session_file}")
+            # 设置文件权限为 600（仅用户可读写）
+            os.chmod(self._session_file, 0o600)
+
+            # 删除旧的未加密文件（如果存在）
+            if self._legacy_session_file.exists():
+                try:
+                    self._legacy_session_file.unlink()
+                    logger.info(f"已删除旧的未加密 Session 文件")
+                except Exception:
+                    pass
+
+            encryption_type = "AES" if SessionEncryption.has_encryption_support() else "Base64"
+            logger.info(f"Session 已加密保存 ({encryption_type}): {self._session_file}")
 
         except Exception as e:
             logger.error(f"保存 Session 失败: {e}")
             raise LoginError(f"保存 Session 失败: {e}")
 
     async def load_session(self, context) -> bool:
-        """加载已保存的 Session
+        """加载已保存的 Session（支持加密和旧格式）
 
         Args:
             context: Playwright BrowserContext
@@ -123,14 +145,34 @@ class LoginBase(ABC):
         Returns:
             是否成功加载
         """
-        if not self._session_file.exists():
-            logger.debug(f"Session 文件不存在: {self._session_file}")
+        session_data = None
+
+        # 优先尝试加载加密文件
+        if self._session_file.exists():
+            try:
+                with open(self._session_file, "r", encoding="utf-8") as f:
+                    encrypted_content = f.read()
+
+                session_data = self._crypto.decrypt(encrypted_content)
+                if session_data:
+                    logger.info("已加载加密 Session")
+            except Exception as e:
+                logger.warning(f"加载加密 Session 失败: {e}")
+
+        # 回退到旧的未加密格式
+        if session_data is None and self._legacy_session_file.exists():
+            try:
+                with open(self._legacy_session_file, "r", encoding="utf-8") as f:
+                    session_data = json.load(f)
+                logger.info("已加载旧格式 Session（将在下次保存时自动加密）")
+            except Exception as e:
+                logger.warning(f"加载旧格式 Session 失败: {e}")
+
+        if session_data is None:
+            logger.debug(f"未找到有效的 Session 文件")
             return False
 
         try:
-            with open(self._session_file, "r", encoding="utf-8") as f:
-                session_data = json.load(f)
-
             storage_state = session_data.get("storage_state")
             if not storage_state:
                 logger.warning("Session 文件格式无效")
@@ -144,9 +186,6 @@ class LoginBase(ABC):
             logger.info(f"Session 已加载: {len(cookies)} 个 cookies")
             return True
 
-        except json.JSONDecodeError as e:
-            logger.error(f"Session 文件解析失败: {e}")
-            return False
         except Exception as e:
             logger.error(f"加载 Session 失败: {e}")
             return False
@@ -280,20 +319,32 @@ class LoginBase(ABC):
         return True
 
     def clear_session(self) -> bool:
-        """清除保存的 Session
+        """清除保存的 Session（包括加密和旧格式）
 
         Returns:
             是否成功清除
         """
+        cleared = False
+
+        # 清除加密文件
         if self._session_file.exists():
             try:
                 self._session_file.unlink()
-                logger.info(f"Session 已清除: {self._session_file}")
-                return True
+                logger.info(f"加密 Session 已清除: {self._session_file}")
+                cleared = True
             except Exception as e:
-                logger.error(f"清除 Session 失败: {e}")
-                return False
-        return True
+                logger.error(f"清除加密 Session 失败: {e}")
+
+        # 清除旧格式文件
+        if self._legacy_session_file.exists():
+            try:
+                self._legacy_session_file.unlink()
+                logger.info(f"旧格式 Session 已清除: {self._legacy_session_file}")
+                cleared = True
+            except Exception as e:
+                logger.error(f"清除旧格式 Session 失败: {e}")
+
+        return cleared or not (self._session_file.exists() or self._legacy_session_file.exists())
 
     def has_saved_session(self) -> bool:
         """检查是否有保存的 Session
@@ -301,7 +352,7 @@ class LoginBase(ABC):
         Returns:
             是否存在保存的 Session
         """
-        return self._session_file.exists()
+        return self._session_file.exists() or self._legacy_session_file.exists()
 
     def get_session_info(self) -> Optional[Dict[str, Any]]:
         """获取保存的 Session 信息
@@ -309,21 +360,38 @@ class LoginBase(ABC):
         Returns:
             Session 信息（不含敏感数据）
         """
-        if not self._session_file.exists():
+        session_data = None
+        is_encrypted = False
+
+        # 优先尝试加载加密文件
+        if self._session_file.exists():
+            try:
+                with open(self._session_file, "r", encoding="utf-8") as f:
+                    encrypted_content = f.read()
+                session_data = self._crypto.decrypt(encrypted_content)
+                is_encrypted = True
+            except Exception:
+                pass
+
+        # 回退到旧格式
+        if session_data is None and self._legacy_session_file.exists():
+            try:
+                with open(self._legacy_session_file, "r", encoding="utf-8") as f:
+                    session_data = json.load(f)
+            except Exception:
+                pass
+
+        if session_data is None:
             return None
 
-        try:
-            with open(self._session_file, "r", encoding="utf-8") as f:
-                session_data = json.load(f)
+        storage_state = session_data.get("storage_state", {})
+        cookies = storage_state.get("cookies", [])
 
-            storage_state = session_data.get("storage_state", {})
-            cookies = storage_state.get("cookies", [])
-
-            return {
-                "platform": session_data.get("platform"),
-                "saved_at": session_data.get("saved_at"),
-                "cookie_count": len(cookies),
-                "cookie_names": [c.get("name") for c in cookies],
-            }
-        except Exception:
-            return None
+        return {
+            "platform": session_data.get("platform"),
+            "saved_at": session_data.get("saved_at"),
+            "cookie_count": len(cookies),
+            "cookie_names": [c.get("name") for c in cookies],
+            "encrypted": is_encrypted,
+            "encryption_type": "AES" if (is_encrypted and SessionEncryption.has_encryption_support()) else ("Base64" if is_encrypted else "None"),
+        }

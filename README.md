@@ -36,19 +36,19 @@ Twitter/X 上的推文、小红书的笔记... 这些平台的反爬措施很严
 
 ## 安装
 
-### 推荐方式（可检查代码）
+### 推荐方式（PyPI）
+
+```bash
+pip install crawl4ai-skill
+python -m playwright install chromium
+```
+
+### 从源码安装（可检查代码）
 
 ```bash
 git clone https://github.com/lancelin111/crawl4ai-skill.git
 cd crawl4ai-skill
 pip install -e .
-python -m playwright install chromium
-```
-
-### 快速安装
-
-```bash
-pip install git+https://github.com/lancelin111/crawl4ai-skill.git
 python -m playwright install chromium
 ```
 
@@ -189,12 +189,22 @@ python -m playwright install chromium --with-deps
 
 ### 凭据存储位置
 
-| 数据 | 存储路径 |
-|------|----------|
-| Session Cookies | `~/.crawl4ai-skill/sessions/<platform>.json` (权限 600) |
-| 浏览器数据 | `~/.crawl4ai-skill/browser_data/<platform>/` |
+| 数据 | 存储路径 | 说明 |
+|------|----------|------|
+| Session Cookies | `~/.crawl4ai-skill/sessions/<platform>_session.enc` | AES-128 加密存储 |
+| 浏览器数据 | `~/.crawl4ai-skill/browser_data/<platform>/` | Playwright 持久化上下文 |
+| 加密密钥 | 基于机器标识符派生 | 无法在其他机器解密 |
 
 **所有数据仅存储在本地，绝不会传输到任何外部服务器。**
+
+### 加密存储
+
+v0.2.0 起，Session Cookies 默认使用 **AES-128-CBC 加密存储**：
+
+- 密钥基于机器标识符（MAC 地址、主机名等）派生
+- 加密后的 Session 文件无法在其他机器上解密
+- 文件权限设置为 600（仅用户可读写）
+- 查看加密状态：`crawl4ai-skill session-status`
 
 ### 凭据输入方式
 
@@ -222,14 +232,15 @@ python -m playwright install chromium --with-deps
 ### 安装方式选择
 
 ```bash
-# 推荐：先 clone 检查代码，再本地安装
+# 推荐：从 PyPI 安装
+pip install crawl4ai-skill
+python -m playwright install chromium
+
+# 或从源码安装（可审查代码）
 git clone https://github.com/lancelin111/crawl4ai-skill.git
 cd crawl4ai-skill
 pip install -e .
 python -m playwright install chromium
-
-# 或直接安装（信任仓库的情况下）
-pip install git+https://github.com/lancelin111/crawl4ai-skill.git
 ```
 
 ## 致谢

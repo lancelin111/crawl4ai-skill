@@ -43,7 +43,7 @@ from .login import (
 
 
 @click.group()
-@click.version_option(version="0.1.0", prog_name="crawl4ai-skill")
+@click.version_option(version="0.2.0", prog_name="crawl4ai-skill")
 def cli():
     """Crawl4AI Skill - 智能搜索与爬取工具
 
@@ -716,9 +716,16 @@ def session_status():
             session_info = info.get("info", {})
             saved_at = session_info.get("saved_at", "未知")
             cookie_count = session_info.get("cookie_count", 0)
+            encrypted = session_info.get("encrypted", False)
+            encryption_type = session_info.get("encryption_type", "None")
+
             click.echo(f"  {platform}: ✓ 已登录")
             click.echo(f"    - 保存时间: {saved_at}")
             click.echo(f"    - Cookie 数量: {cookie_count}")
+            if encrypted:
+                click.echo(f"    - 加密存储: ✓ ({encryption_type})")
+            else:
+                click.echo(f"    - 加密存储: ✗ (建议重新登录以启用加密)")
         else:
             click.echo(f"  {platform}: ✗ 未登录")
 
@@ -996,21 +1003,16 @@ def crawl_with_login(
             click.echo(f"  请先运行: crawl4ai-skill login {platform}", err=True)
             return None
 
-        # 加载 Session 文件，提取 storage_state
-        session_file = login_handler._session_file
-        try:
-            with open(session_file, "r", encoding="utf-8") as f:
-                session_data = json.load(f)
-            storage_state = session_data.get("storage_state")
-            if not storage_state:
-                click.echo(f"✗ Session 文件格式无效", err=True)
-                return None
-        except Exception as e:
-            click.echo(f"✗ 加载 Session 失败: {e}", err=True)
+        # 获取 Session 信息
+        session_info = login_handler.get_session_info()
+        if not session_info:
+            click.echo(f"✗ Session 文件格式无效", err=True)
             return None
 
         click.echo(f"正在使用 {platform} Session 爬取: {url}")
-        click.echo(f"  Cookies 数量: {len(storage_state.get('cookies', []))}")
+        click.echo(f"  Cookies 数量: {session_info.get('cookie_count', 0)}")
+        if session_info.get('encrypted'):
+            click.echo(f"  加密存储: ✓ ({session_info.get('encryption_type', 'Unknown')})")
 
         try:
             from playwright.async_api import async_playwright

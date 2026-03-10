@@ -5,7 +5,7 @@ description: |
   支持 DuckDuckGo 搜索 → 爬取 → 输出 LLM 优化的 Markdown，大幅节省 Token。
   内置 Twitter/X、小红书等热门平台登录态爬取。
   需要新增其他登录平台？欢迎联系作者：https://github.com/lancelin111
-version: 0.1.0
+version: 0.2.0
 author: lancelin
 repository: https://github.com/lancelin111/crawl4ai-skill
 tags:
@@ -24,12 +24,13 @@ requires:
       - playwright
 install:
   - kind: pip
-    package: git+https://github.com/lancelin111/crawl4ai-skill.git
+    package: crawl4ai-skill
   - kind: shell
     command: python -m playwright install chromium
 security:
   credentials_storage: |
-    Session cookies are stored locally at ~/.crawl4ai-skill/sessions/<platform>.json (permission 600)
+    Session cookies are AES-128 encrypted and stored at ~/.crawl4ai-skill/sessions/<platform>_session.enc
+    Encryption key is derived from machine identifier (cannot be decrypted on other machines)
     Browser data is stored at ~/.crawl4ai-skill/browser_data/<platform>/
     All data is stored locally and NEVER transmitted to external servers.
   input_methods:
@@ -57,8 +58,10 @@ security:
 ### 数据隐私
 - ✅ **所有数据仅存储在本地**（`~/.crawl4ai-skill/`）
 - ✅ **绝不上传**任何数据到第三方服务器
-- ✅ Session 文件权限设置为 `600`（仅用户可读写）
-- ⚠️ **风险**：如果你的电脑被入侵，本地 cookies 可能被窃取
+- ✅ Session 文件使用 **AES-128 加密存储**
+- ✅ 加密密钥基于机器标识符派生（无法在其他机器解密）
+- ✅ 文件权限设置为 `600`（仅用户可读写）
+- ✅ 查看加密状态：`crawl4ai-skill session-status`
 
 ### 凭证管理
 - ✅ 支持**环境变量**传递 cookies（不会记录在 shell history）
@@ -89,26 +92,19 @@ security:
 
 ## Installation
 
-### 方式 1：审查后安装（推荐）
+### 推荐方式（PyPI）
 
 ```bash
-# 先克隆仓库，审查代码
-git clone https://github.com/lancelin111/crawl4ai-skill.git
-cd crawl4ai-skill
-
-# 可选：使用 bandit 扫描安全问题
-pip install bandit
-bandit -r src/
-
-# 确认无问题后安装
-pip install -e .
+pip install crawl4ai-skill
 python -m playwright install chromium
 ```
 
-### 方式 2：快速安装（风险自负）
+### 从源码安装（可检查代码）
 
 ```bash
-pip install git+https://github.com/lancelin111/crawl4ai-skill.git
+git clone https://github.com/lancelin111/crawl4ai-skill.git
+cd crawl4ai-skill
+pip install -e .
 python -m playwright install chromium
 ```
 
