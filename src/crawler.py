@@ -150,6 +150,8 @@ class SmartCrawler:
         format: str = "fit_markdown",
         wait_for: Optional[str] = None,
         timeout: int = 30,
+        wait_until: str = "domcontentloaded",
+        delay_before_return_html: float = 0.1,
     ) -> CrawlResult:
         """爬取单个页面
 
@@ -158,6 +160,8 @@ class SmartCrawler:
             format: 输出格式 (fit_markdown/markdown_with_citations/raw_markdown)
             wait_for: 等待元素加载（CSS selector）
             timeout: 超时时间（秒）
+            wait_until: 等待策略 (domcontentloaded/networkidle/load/commit)
+            delay_before_return_html: 返回 HTML 前的额外延迟（秒），用于等待 JS 执行
 
         Returns:
             爬取结果
@@ -169,6 +173,7 @@ class SmartCrawler:
         """
         try:
             from crawl4ai import AsyncWebCrawler
+            from crawl4ai.async_configs import CrawlerRunConfig
         except ImportError:
             raise CrawlError("crawl4ai 未安装，请运行: pip install crawl4ai && crawl4ai-setup")
 
@@ -178,10 +183,18 @@ class SmartCrawler:
         try:
             logger.info(f"开始爬取: {url}")
 
+            # 创建配置对象
+            config = CrawlerRunConfig(
+                wait_for=wait_for if wait_for else None,
+                wait_until=wait_until,
+                page_timeout=timeout * 1000,  # 转换为毫秒
+                delay_before_return_html=delay_before_return_html,
+            )
+
             async with AsyncWebCrawler(verbose=self.verbose) as crawler:
                 result_container = await crawler.arun(
                     url=url,
-                    wait_for=wait_for if wait_for else None,
+                    config=config,
                 )
 
                 if not result_container.success:

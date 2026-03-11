@@ -112,6 +112,19 @@ def search(query: str, num_results: int, output: Optional[str]):
 @click.option("--output", "-o", type=click.Path(), help="输出文件路径")
 @click.option("--wait-for", "-w", help="等待元素加载 (CSS selector)")
 @click.option("--timeout", "-t", default=30, help="超时时间（秒）")
+@click.option(
+    "--wait-until",
+    default="domcontentloaded",
+    type=click.Choice(["domcontentloaded", "networkidle", "load", "commit"]),
+    help="等待策略：domcontentloaded(默认), networkidle(动态页面推荐), load, commit",
+)
+@click.option(
+    "--delay",
+    "-d",
+    default=0.1,
+    type=float,
+    help="返回前额外等待时间（秒），用于 JS 动态页面",
+)
 @click.option("--include-metadata", is_flag=True, help="在输出中包含元数据头")
 def crawl(
     url: str,
@@ -119,6 +132,8 @@ def crawl(
     output: Optional[str],
     wait_for: Optional[str],
     timeout: int,
+    wait_until: str,
+    delay: float,
     include_metadata: bool,
 ):
     """爬取单个网页
@@ -130,11 +145,19 @@ def crawl(
       crawl4ai-skill crawl https://example.com
       crawl4ai-skill crawl https://example.com --format markdown_with_citations
       crawl4ai-skill crawl https://example.com -o page.md
+      crawl4ai-skill crawl https://xueqiu.com/S/BIDU --wait-until networkidle --delay 2
     """
     try:
         crawler = SmartCrawler()
         result = asyncio.run(
-            crawler.crawl_page(url, format=format, wait_for=wait_for, timeout=timeout)
+            crawler.crawl_page(
+                url,
+                format=format,
+                wait_for=wait_for,
+                timeout=timeout,
+                wait_until=wait_until,
+                delay_before_return_html=delay,
+            )
         )
 
         if result.status == "failed":
