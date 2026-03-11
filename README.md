@@ -39,6 +39,7 @@
 - 🔍 **DuckDuckGo 搜索** - 免 API key，快速搜索
 - 🕷️ **智能爬取** - 自动识别 sitemap、递归爬取
 - 📝 **LLM 优化输出** - Fit Markdown，节省 token
+- ⚡ **动态页面支持** - 支持 JavaScript 渲染页面
 
 ## 安装
 
@@ -92,6 +93,24 @@ crawl4ai-skill crawl-site https://docs.example.com --max-pages 50
 ```bash
 crawl4ai-skill search-and-crawl "AI tutorials" --crawl-top 3
 ```
+
+### 动态页面爬取
+
+对于 JavaScript 渲染的动态页面（如雪球、知乎等），使用 `--wait-until` 和 `--delay` 参数：
+
+```bash
+# 等待网络空闲 + 额外等待 2 秒
+crawl4ai-skill crawl https://xueqiu.com/S/BIDU --wait-until networkidle --delay 2
+
+# 等待特定元素出现
+crawl4ai-skill crawl https://example.com --wait-for ".content-loaded"
+```
+
+| 参数 | 说明 |
+|------|------|
+| `--wait-until` | 等待策略：`domcontentloaded`(默认), `networkidle`(推荐动态页面), `load`, `commit` |
+| `--delay` | 返回前额外等待时间（秒） |
+| `--wait-for` | 等待特定 CSS 选择器元素出现 |
 
 ## 命令参考
 

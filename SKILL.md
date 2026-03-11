@@ -28,6 +28,7 @@ requires:
 - 🔍 **DuckDuckGo 搜索** - 免 API key，零配置
 - 🕷️ **智能全站爬取** - 自动识别 sitemap/递归爬取
 - 📝 **LLM 优化输出** - Fit Markdown 格式，节省 80% Token
+- ⚡ **动态页面支持** - JavaScript 渲染页面爬取
 
 ---
 
@@ -75,6 +76,15 @@ crawl4ai-skill crawl-site https://docs.fastapi.com --max-pages 100 -o ./fastapi-
 crawl4ai-skill search-and-crawl "Vue 3 best practices" --crawl-top 3
 ```
 
+### 场景 3：动态页面爬取
+
+对于 JavaScript 渲染的页面（雪球、知乎等）：
+
+```bash
+# 等待网络空闲 + 额外等待 2 秒
+crawl4ai-skill crawl https://xueqiu.com/S/BIDU --wait-until networkidle --delay 2
+```
+
 ---
 
 ## 输出格式
@@ -113,8 +123,11 @@ crawl4ai-skill crawl https://example.com --format raw_markdown
 --num-results 10          # 返回数量
 
 # 爬取
---format fit_markdown    # 输出格式
---output result.md       # 输出文件
+--format fit_markdown     # 输出格式
+--output result.md        # 输出文件
+--wait-until networkidle  # 等待策略（动态页面推荐）
+--delay 2                 # 额外等待时间（秒）
+--wait-for ".selector"    # 等待特定元素
 
 # 全站爬取
 --max-pages 100          # 最多爬取页面数
