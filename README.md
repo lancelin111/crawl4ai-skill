@@ -43,10 +43,24 @@
 
 ## 安装
 
-### 推荐方式：PyPI
+### 方式 1：PyPI（推荐）
 
 ```bash
 pip install crawl4ai-skill
+```
+
+### 方式 2：skills.sh 生态（通用 Agent）
+
+适用于 Claude、Copilot、通用 AI Agent：
+
+```bash
+npx skills add lancelin111/crawl4ai-skill@crawl4ai-skill
+```
+
+### 方式 3：ClawHub（OpenClaw 专用）
+
+```bash
+clawhub install crawl4ai-skill
 ```
 
 **PyPI 包已通过：**
