@@ -1,7 +1,7 @@
 ---
 name: crawl4ai-skill
 description: "Web crawling and scraping tool with LLM-optimized output. 网页爬虫爬取工具 | Web crawler, web scraper, spider. DuckDuckGo search, site crawling, dynamic page scraping. 智能搜索爬取 | Free, no API key required."
-version: 0.3.0
+version: 1.1.0
 author: Lancelin
 license: MIT-0
 repository: https://github.com/lancelin111/crawl4ai-skill
