@@ -1,0 +1,33 @@
+{
+  "name": "crawl4ai-skill",
+  "version": "0.3.0",
+  "description": "Smart web crawling and search skill for AI agents. Provides DuckDuckGo search and intelligent web scraping with LLM-optimized Markdown output.",
+  "keywords": [
+    "agent-skill",
+    "ai-agent",
+    "skills.sh",
+    "openclaw",
+    "web-scraping",
+    "web-crawling",
+    "llm",
+    "markdown",
+    "search",
+    "crawl4ai"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lancelin111/crawl4ai-skill.git"
+  },
+  "homepage": "https://github.com/lancelin111/crawl4ai-skill",
+  "bugs": {
+    "url": "https://github.com/lancelin111/crawl4ai-skill/issues"
+  },
+  "author": "Lancelin",
+  "license": "MIT",
+  "files": [
+    "skills"
+  ],
+  "scripts": {
+    "postinstall": "echo '✅ crawl4ai-skill installed. For OpenClaw: clawhub install crawl4ai-skill'"
+  }
+}
